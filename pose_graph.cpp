@@ -9,8 +9,20 @@
 #include <iostream>
 
 
+/*
+ * Constructor loads the graph from disk.
+ */
+PoseGraph2D::PoseGraph2D(std::string dataset_name):
+        dataset_name_(dataset_name)
+{
+    std::string edges_fpath = "datasets/" + dataset_name + "/" + dataset_name + "_edges.txt";
+    std::string vertices_fpath = "datasets/" + dataset_name + "/" + dataset_name + "_vertices.txt";
+    std::string initial_state_fpath = "datasets/" + dataset_name + "/" + dataset_name + "_initial_state.txt";
 
-
+    read_edge_data(edges_fpath);
+    read_vertex_data(vertices_fpath);
+    read_initial_state_vector(initial_state_fpath);
+}
 
 
 /*
@@ -79,10 +91,7 @@ void PoseGraph2D::read_vertex_data(std::string vertices_fpath) {
             size_t v_id = str2size_t(vertex_data[0]);
             size_t x_offset_idx = str2size_t(vertex_data[1]);
             size_t dim = str2size_t(vertex_data[2]);
-
-            // TODO
-            //VertexPGO v_pgo = VertexPGO(v_id, x_offset_idx, dim);
-            //vertex_map_[v_id] = v_pgo;
+            vertex_map_.insert(std::make_pair(v_id, new VertexPGO(v_id, x_offset_idx, dim) ));
         }
         ifp.close();
     }
@@ -113,17 +122,6 @@ void PoseGraph2D::read_initial_state_vector(std::string initial_state_fpath)
 }
 
 
-void PoseGraph2D::read_graph_from_disk(std::string dataset_name)
-{
-    std::string edges_fpath = "datasets/" + dataset_name + "/" + dataset_name + "_edges.txt";
-    std::string vertices_fpath = "datasets/" + dataset_name + "/" + dataset_name + "_vertices.txt";
-    std::string initial_state_fpath = "datasets/" + dataset_name + "/" + dataset_name + "_initial_state.txt";
-
-    read_edge_data(edges_fpath);
-    read_vertex_data(vertices_fpath);
-    read_initial_state_vector(initial_state_fpath);
-}
-
 
 /*
  * Extract the offset of the poses and the landmarks.
@@ -144,10 +142,10 @@ void PoseGraph2D::get_poses_landmarks() {
         auto v_id = kv.first;
         auto v_pgo = kv.second;
 
-        if (v_pgo.dim_ == 3){
-            pose_idx_vec.push_back(v_pgo.x_offset_idx_);
-        } else if (v_pgo.dim_==2){
-            landmark_idx_vec.push_back(v_pgo.x_offset_idx_);
+        if (v_pgo->dim_ == 3){
+            pose_idx_vec.push_back(v_pgo->x_offset_idx_);
+        } else if (v_pgo->dim_==2){
+            landmark_idx_vec.push_back(v_pgo->x_offset_idx_);
         }
     }
     // Now place them into an array
@@ -165,7 +163,6 @@ void PoseGraph2D::get_poses_landmarks() {
         landmark_start_idxs_(i,0) = landmark_idx_vec[i];
     }
 }
-
 
 
 
@@ -190,15 +187,4 @@ EdgePGO::EdgePGO(std::string edge_type, size_t from_v_id, size_t to_v_id,
                 measurement_(measurement), information_(information)
 
     {};
-
-
-
-
-
-
-
-
-
-
-
 

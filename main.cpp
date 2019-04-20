@@ -1,7 +1,5 @@
 
 
-#pragma once
-
 #define _USE_MATH_DEFINES
 
 #include <iostream>
@@ -15,7 +13,6 @@
 
 /*
  * DLR is Deutsches Zentrum für Luft- und Raumfahrt (German Aerospace Center)
-    """
  */
 int main() {
 
@@ -29,7 +26,8 @@ int main() {
 
     PoseGraph2D pg = PoseGraph2D(dataset_name);
 
-    run_lsslam(g, dataset_name);
+    GaussNewtonOptimizer gno(pg, dataset_name);
+    gno.optimize();
     return 0;
 }
 

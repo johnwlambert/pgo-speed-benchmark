@@ -5,13 +5,13 @@
 #pragma once
 
 #include <cmath>
-#include "pose_graph.h
+#include "pose_graph.h"
 
 
 /*
  * Move to [-pi,pi] range
  */
-double clip_angle_to_arctan(double theta)
+static double clip_angle_to_arctan(double theta)
 {
     double s = std::sin(theta);
     double c = std::cos(theta);
@@ -30,16 +30,16 @@ double clip_angle_to_arctan(double theta)
     Returns:
     -	g:graph, with poses ON the manifold SO(2)
  */
-PoseGraph2D normalize_angles(PoseGraph2D pg)
+static PoseGraph2D normalize_angles(PoseGraph2D & pg)
 {
     for (auto & kv: pg.vertex_map_) {
         size_t v_id = kv.first;
-        VertexPGO v_pgo = kv.second;
+        auto v_pgo = kv.second;
 
-        if (v_pgo.dim_ == 3) {
+        if (v_pgo->dim_ == 3) {
             // get the offset of the x element of this pose vector
             // in the whole state vector
-            size_t offs = v_pgo.x_offset_idx_;
+            size_t offs = v_pgo->x_offset_idx_;
 
             // theta from the first robot pose -- each is (x,y,theta)
             size_t theta_idx = offs + 2;

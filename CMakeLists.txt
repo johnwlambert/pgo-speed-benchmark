@@ -4,5 +4,5 @@ project(pose_slam_2d_benchmark)
 set(CMAKE_CXX_STANDARD 17)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
-add_executable(pose_slam_2d_benchmark main.cpp pose_graph.h se2.h se2.cpp pose_graph.cpp string_utils.h manifold_constraints.h gauss_newton.h timing_utils.h)
+add_executable(pose_slam_2d_benchmark main.cpp pose_graph.h pose_graph.cpp se2.h se2.cpp gauss_newton.h gauss_newton.cpp string_utils.h manifold_constraints.h timing_utils.h)
 target_link_libraries (pose_slam_2d_benchmark Eigen3::Eigen)

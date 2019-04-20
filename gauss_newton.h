@@ -13,56 +13,28 @@
 #include "manifold_constraints.h"
 #include "timing_utils.h"
 
-/*
- * Args:
-    -	g: graph
-    -	numIterations: the number of iterations of Gauss-Newton
- */
-void run_lsslam(PoseGraph2D g, std::string dataset_name)
+
+class GaussNewtonOptimizer
 {
-    bool visualize=false;
-    size_t max_iters = 100;
-    //// plot the initial state of the graph
-    //plot_graph(fig, g, 0)
+public:
+    GaussNewtonOptimizer(PoseGraph2D & g, std::string dataset_name);
+    void optimize();
 
-    //print('Initial error %f\n', compute_global_error(g))
-    // maximum allowed dx
-    double EPSILON = std::pow(10.0,-4);
+    private:
+        MatrixXd H_;
+        VectorXd b_;
+        VectorXd dx_;
+        PoseGraph2D g_;
+        std::string dataset_name_;
+        static constexpr size_t max_iters_{100};
 
-    // Error
-    double err = 0;
+        // pre-allocate space for the error vector and Jacobians
+        MatrixXd e_;
+        MatrixXd A_; // Jacobian w.r.t. x1
+        MatrixXd B_; // Jacobian w.r.t. x2
 
-    // carry out the iterations
-    for (size_t iter=0; iter<max_iters; iter++){
-
-        std::cout << "Performing iteration " << i << std::endl;
-        std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
-        VectorXd dx = linearize_and_solve(g, iter, dataset_name);
-        double duration = compute_elapsed_wall_clock_time(start_time, std::chrono::steady_clock::now() );
-        std::cout << "Iter " << iter << " took " << duration << " sec.";
-
-        // Apply the solution to the state vector g.x
-        g.x_ += dx;
-
-        PoseGraph2D g = normalize_angles(g);
-        if (visualize==true){
-            // plot the current state of the graph
-            //plot_graph(fig, g, iter)
-            // err = compute_global_error(g)
-        }
-
-        std::cout << "Current error = " << err;
-
-        // termination criterion
-        if (dx.norm() < std::pow(1.0,-10) ){
-            break;
-        }
-    }
-
-
-    std::cout << "Final error =" << err << std::endl;
-
-}
-
+        void linearize();
+        void solve_system();
+};
 
 

@@ -2,16 +2,17 @@
 // Created by John Lambert-Admin on 4/19/19.
 //
 
+#pragma once
+
 #include <vector>
 #include <string>
 #include <sstream>
 
-#pragma once
 
 /*
  * Split comma separated line into individual elements (as strings).
  */
-std::vector<std::string> split_comma_delimited_string(std::string string_to_split)
+static std::vector<std::string> split_comma_delimited_string(std::string string_to_split)
 {
     std::vector<std::string> comma_sep_strings;
     std::stringstream ss(string_to_split);
@@ -25,7 +26,7 @@ std::vector<std::string> split_comma_delimited_string(std::string string_to_spli
     return comma_sep_strings;
 }
 
-size_t str2size_t(std::string str)
+static size_t str2size_t(std::string str)
 {
     std::stringstream sstream(str);
     size_t result;
