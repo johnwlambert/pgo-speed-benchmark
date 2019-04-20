@@ -9,9 +9,37 @@
 #include <Eigen/Core>
 
 #include "se2.h"
+#include "pose_graph.h"
+#include "gauss_newton.h"
 
 
+/*
+ * DLR is Deutsches Zentrum für Luft- und Raumfahrt (German Aerospace Center)
+    """
+ */
 int main() {
+
+    // simulation datasets
+    // dataset_name = 'simulation-pose-landmark'
+    // dataset_name = 'simulation-pose-pose'
+
+    // real-world datasets
+    // dataset_name = 'intel'
+    std::string dataset_name = "dlr";
+
+    PoseGraph2D pg = PoseGraph2D(dataset_name);
+
+    run_lsslam(g, dataset_name);
+    return 0;
+}
+
+
+
+
+
+
+void unit_test1()
+{
     std::cout << "Hello, World!" << std::endl;
     Vec3 v;
     v(0,0) = 5.0;
@@ -25,5 +53,4 @@ int main() {
 
     Mat3x3 inv = w_T_i.inverse();
     std::cout << w_T_i.inverse() << std::endl;
-    return 0;
 }
