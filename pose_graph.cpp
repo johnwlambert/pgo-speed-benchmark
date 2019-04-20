@@ -15,9 +15,9 @@
 PoseGraph2D::PoseGraph2D(std::string dataset_name):
         dataset_name_(dataset_name)
 {
-    std::string edges_fpath = "datasets/" + dataset_name + "/" + dataset_name + "_edges.txt";
-    std::string vertices_fpath = "datasets/" + dataset_name + "/" + dataset_name + "_vertices.txt";
-    std::string initial_state_fpath = "datasets/" + dataset_name + "/" + dataset_name + "_initial_state.txt";
+    std::string edges_fpath = "../datasets/" + dataset_name + "/" + dataset_name + "_edges.txt";
+    std::string vertices_fpath = "../datasets/" + dataset_name + "/" + dataset_name + "_vertices.txt";
+    std::string initial_state_fpath = "../datasets/" + dataset_name + "/" + dataset_name + "_initial_state.txt";
 
     read_edge_data(edges_fpath);
     read_vertex_data(vertices_fpath);
@@ -54,15 +54,15 @@ void PoseGraph2D::read_edge_data(std::string edges_fpath)
             measurement.resize(dim,1);
             for (size_t i=0; i<dim;i++)
             {
-                measurement(i,1) = std::stod(edge_info[i+3]);
+                measurement(i,0) = std::stod(edge_info[i+3]);
             }
 
             MatrixXd information;
             information.resize(dim,dim);
             for (size_t i=0; i<dim*dim;i++)
             {
-                auto row = i/3;
-                auto col = i%3;
+                auto row = i/dim;
+                auto col = i%dim;
                 information(row,col) = std::stod(edge_info[3+dim+i]);
             }
             EdgePGO edge(edge_type, from_v_id, to_v_id, measurement, information);
@@ -114,7 +114,7 @@ void PoseGraph2D::read_initial_state_vector(std::string initial_state_fpath)
         ifp.close();
     }
 
-    size_t  state_vec_len = 0;
+    size_t  state_vec_len = state_data.size();
     x_.resize(state_vec_len, Eigen::NoChange);
     for (size_t i=0;i<state_vec_len;i++) {
         x_(i, 0) = state_data[i];

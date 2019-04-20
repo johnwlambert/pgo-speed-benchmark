@@ -26,7 +26,7 @@ SE2::SE2(Vec3 v): v_(v)
     // assert(R.shape == (2,2))
     // assert(t.shape == (2,))
 
-    mat_3x3_ = Mat3x3::Identity();
+    mat_3x3_ = Mat3x3::Identity(3,3);
     // access (2x2) block at (0,0)
     mat_3x3_.block(0,0,2,2) = R_;
     // access far right block (2,1) starting at (0,2)
@@ -46,7 +46,7 @@ SE2::SE2(Vec3 v): v_(v)
  */
 Mat3x3 SE2::inverse()
 {
-    Mat3x3 T_inv = Eigen::Matrix3d::Identity();
+    Mat3x3 T_inv = Eigen::Matrix3d::Identity(3,3);
 
     // first 2x2 block
     T_inv.block(0,0,2,2) = R_.transpose() ;

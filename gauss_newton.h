@@ -35,6 +35,8 @@ public:
 
         void linearize();
         void solve_system();
+        void linearize_pose_landmark_constraint(Vec3 x_i, Vec2 l, Vec2 z);
+        void linearize_pose_pose_constraint(Vec3 v_i, Vec3 v_j, Vec3 z_ij);
 };
 
 

@@ -109,7 +109,7 @@ void GaussNewtonOptimizer::linearize()
     {
         size_t i_v_id = edge.from_v_id_;
         size_t j_v_id = edge.to_v_id_;
-        
+
         size_t i = g_.vertex_map_[i_v_id]->x_offset_idx_;
         size_t j = g_.vertex_map_[j_v_id]->x_offset_idx_;
 
@@ -130,7 +130,7 @@ void GaussNewtonOptimizer::linearize()
 
             // Computing the error and the Jacobians, using edge measurement "z"
             // e the error vector. A Jacobian wrt x1. B Jacobian wrt x2
-            // TODO linearize_pose_pose_constraint(x1, x2, edge.measurement_);
+            linearize_pose_pose_constraint(x1, x2, edge.measurement_);
 
         } else if (edge.edge_type_=="L") {
             // pose-landmark constraint
@@ -145,7 +145,7 @@ void GaussNewtonOptimizer::linearize()
             Vec3 x2 = g_.x_.block(j, 0, 2, 1); // the landmark
 
             // Computing the error and the Jacobians, using measurement "z"
-            // TODO linearize_pose_landmark_constraint(x1, x2, edge.measurement_);
+            linearize_pose_landmark_constraint(x1, x2, edge.measurement_);
         }
 
         // Update H matrix and vector b, using Omega (the information matrix)
@@ -175,9 +175,101 @@ void GaussNewtonOptimizer::linearize()
     //   deltax(1:3,1)=0;
 
     // set upper-left 3x3 block of matrix
-    H_.block(0,0,3,3) += Mat3x3::Identity();
+    H_.block(0,0,3,3) += Mat3x3::Identity(3,3);
 
     // save_matrix_image( H.copy(), iter, dataset_name )
 }
 
 
+
+
+
+
+
+
+/*
+ * Compute the error of a pose-pose constraint. We
+    compute homogeneous matrix transforms from the pose
+    vectors (x,y,theta).
+
+    We extract the poses of the vertices and the mean of this k'th edge.
+    Computes the taylor expansion of the error function of this k'th edge.
+
+    Args:
+    -	v_i: 3x1 vector (x,y,theta) of the first robot pose
+    -	v_j: 3x1 vector (x,y,theta) of the second robot pose
+    -	z 3x1 vector (x,y,theta) of the measurement
+
+            Returns:
+    -	e: 3x1 error of the constraint -  e_k(x)
+    -	A: 3x3 Jacobian wrt x1 - d e_k(x) / d(x_i)
+    -	B: 3x3 Jacobian wrt x2 -  d e_k(x) / d(x_j)
+ */
+void GaussNewtonOptimizer::linearize_pose_pose_constraint(Vec3 v_i, Vec3 v_j, Vec3 z_ij)
+{
+    e_.resize(3,1);
+    A_.resize(3,3);
+    B_.resize(3,3);
+
+    // compute the homogeneous transforms of the previous solutions
+    SE2 Z_ij(z_ij);
+    SE2 w_T_i(v_i);
+    SE2 w_T_j(v_j);
+
+    // compute the displacement between x_i and x_j
+    Mat3x3 f_ij = w_T_i.inverse() * w_T_j.mat_3x3_;
+
+    // this below is too long to explain, to understand it derive it by hand
+    Vec2 dt_ij = w_T_j.t_ - w_T_i.t_;
+
+    A_ = -1 * Mat3x3::Identity(3,3);
+    // left 2x2 block
+    A_.block(0,0,2,2) = -w_T_i.R_.transpose();
+    // far-right column
+    A_.block(0,2,2,1) = w_T_i.dRT_dtheta_ * dt_ij;
+
+    B_ = Mat3x3::Identity(3,3);
+    // left 2x2 block
+    B_.block(0,0,2,2) = w_T_i.R_.transpose();
+    // far-right column
+    B_.block(0,2,2,1) = Vec2::Zero();
+
+    Mat3x3 ztinv = Z_ij.inverse();
+    e_ = SE2_mat(ztinv * f_ij).as_pose_vector();
+    // far-right column
+    ztinv.block(0,2,2,1) = Vec2::Zero();
+    A_ = ztinv * A_;
+    B_ = ztinv * B_;
+
+}
+
+/*
+ *  Compute the error of a pose-landmark constraint
+ *  and the Jacobians of the error.
+ *
+ *  Args:
+ *  -	x: 3x1 vector (x,y,theta) of the robot pose
+ *  -	l: 2x1 vector (x,y) of the landmark
+ *  -	z: 2x1 vector (x,y) of the measurement, the position of the landmark in
+ *  the coordinate frame of the robot given by the vector x
+ *
+ *          Output
+ *  -	e: 2x1 error of the constraint
+ *  -	A: 2x3 Jacobian wrt x
+ *  -	B: 2x2 Jacobian wrt l
+ */
+void GaussNewtonOptimizer::linearize_pose_landmark_constraint(Vec3 x_i, Vec2 l, Vec2 z)
+{
+    e_.resize(2,1);
+    A_.resize(2,3);
+    B_.resize(2,2);
+
+    SE2 w_T_i(x_i);
+    e_ = w_T_i.R_.transpose() * (l - w_T_i.t_) - z;
+
+    // left 2x2 block
+    A_.block(0,0,2,2) = -w_T_i.R_.transpose();
+    // far right column
+    A_.block(0,2,2,1) = w_T_i.dRT_dtheta_ * (l - w_T_i.t_);
+    B_ = w_T_i.R_.transpose();
+}
