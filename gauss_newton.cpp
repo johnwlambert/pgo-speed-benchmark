@@ -131,6 +131,21 @@ void GaussNewtonOptimizer::linearize()
             // Computing the error and the Jacobians, using edge measurement "z"
             // e the error vector. A Jacobian wrt x1. B Jacobian wrt x2
             linearize_pose_pose_constraint(x1, x2, edge.measurement_);
+            // Update H matrix and vector b, using Omega (the information matrix)
+            // compute the blocks of H^k
+            Vec3 b_i = -1* A_.transpose() * edge.information_ * e_;
+            Vec3 b_j = -1* B_.transpose() * edge.information_ * e_;
+            Mat3x3 H_ii = A_.transpose() *  edge.information_ * A_;
+            Mat3x3 H_ij = A_.transpose() *  edge.information_ * B_;
+            Mat3x3 H_jj = B_.transpose() *  edge.information_ * B_;
+            // accumulate the blocks in H and b
+            H_.block(i,i,i_dim,i_dim) += H_ii;
+            H_.block(j,j,j_dim,j_dim) += H_jj;
+            H_.block(i,j,i_dim,j_dim) += H_ij;
+            H_.block(j,i,j_dim,i_dim) += H_ij.transpose();
+
+            b_.block(i,0,i_dim,1) += b_i;
+            b_.block(j,0,j_dim,1) += b_j;
 
         } else if (edge.edge_type_=="L") {
             // pose-landmark constraint
@@ -142,28 +157,25 @@ void GaussNewtonOptimizer::linearize()
             // of the H matrix and the vector b.
 
             Vec3 x1 = g_.x_.block(i, 0, 3, 1); // the robot pose
-            Vec3 x2 = g_.x_.block(j, 0, 2, 1); // the landmark
+            Vec2 x2 = g_.x_.block(j, 0, 2, 1); // the landmark
 
             // Computing the error and the Jacobians, using measurement "z"
             linearize_pose_landmark_constraint(x1, x2, edge.measurement_);
+            // Update H matrix and vector b, using Omega (the information matrix)
+            // compute the blocks of H^k
+            Vec3 b_i = -1* A_.transpose() * edge.information_ * e_;
+            Vec2 b_j = -1* B_.transpose() * edge.information_ * e_;
+            Mat3x3 H_ii = A_.transpose() *  edge.information_ * A_;
+            Mat3x2 H_ij = A_.transpose() *  edge.information_ * B_;
+            Mat2x2 H_jj = B_.transpose() *  edge.information_ * B_;
+            // accumulate the blocks in H and b
+            H_.block(i,i,i_dim,i_dim) += H_ii;
+            H_.block(j,j,j_dim,j_dim) += H_jj;
+            H_.block(i,j,i_dim,j_dim) += H_ij;
+            H_.block(j,i,j_dim,i_dim) += H_ij.transpose();
+            b_.block(i,0,i_dim,1) += b_i;
+            b_.block(j,0,j_dim,1) += b_j;
         }
-
-        // Update H matrix and vector b, using Omega (the information matrix)
-        // compute the blocks of H^k
-        Vec3 b_i = -1* A_.transpose() * edge.information_ * e_;
-        Vec3 b_j = -1* B_.transpose() * edge.information_ * e_;
-        Mat3x3 H_ii = A_.transpose() *  edge.information_ * A_;
-        Mat3x3 H_ij = A_.transpose() *  edge.information_ * B_;
-        Mat3x3 H_jj = B_.transpose() *  edge.information_ * B_;
-
-        // accumulate the blocks in H and b
-        H_.block(i,i,i_dim,i_dim) += H_ii;
-        H_.block(j,j,j_dim,j_dim) += H_jj;
-        H_.block(i,j,i_dim,j_dim) += H_ij;
-        H_.block(j,i,j_dim,i_dim) += H_ij.transpose();
-
-        b_.block(i,0,i_dim,1) += b_i;
-        b_.block(j,0,j_dim,1) += b_j;
     }
 
     // Add the prior for one pose of the edges

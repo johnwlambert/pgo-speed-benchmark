@@ -10,6 +10,7 @@ using Vec2 = Eigen::Matrix<double, 2, 1>;
 using Vec3 = Eigen::Matrix<double, 3, 1>;
 using Mat2x2 = Eigen::Matrix<double, 2, 2>;
 using Mat2x3 = Eigen::Matrix<double, 2, 3>;
+using Mat3x2 = Eigen::Matrix<double, 3, 2>;
 using Mat3x3 = Eigen::Matrix<double, 3, 3>;
 
 static constexpr size_t DOF = 3;
