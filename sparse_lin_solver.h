@@ -22,6 +22,8 @@ class SparseLinSolver{
         SparseLinSolver(MatrixXd & A, VectorXd & b, VectorXd & x) : A_(A), b_(b), x_(x)
         {}
 
+
+        /* We write this function in C++ -> interface with extern c-implementation files */
     void solve_cplusplus(std::string solver_type)
     {
             size_t n = A_.cols();
@@ -29,7 +31,7 @@ class SparseLinSolver{
             size_t idx_1d = 0;
             double *A_arr = (double *) malloc( sizeof(double) *m*n);
             double *b_arr = (double *) malloc( sizeof(double) *m);
-            double *x_arr = (double *) malloc( sizeof(double) *m);
+            double *x_result = (double *) malloc( sizeof(double) *m);
             size_t i = 0;
             size_t j = 0;
 
@@ -44,11 +46,13 @@ class SparseLinSolver{
                     b_arr[i] = b_(i,0);
             }
 
-            solve_c(A_arr, b_arr, x_arr, A_.rows(), A_.cols() );
+            solve_c(A_arr, b_arr, x_result, A_.rows(), A_.cols() );
+            /* Store back in Eigen from double array */
+            for (i = 0 ; i < m ; i++) x_(i,0) = x_result [i] ;
 
             free(A_arr);
             free(b_arr);
-            free(x_arr);
+            free(x_result);
     }
 
 

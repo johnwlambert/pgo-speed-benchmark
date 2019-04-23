@@ -193,15 +193,15 @@ problem *load_csparse_format(double *A_arr, double *b_arr, size_t num_rows, size
 
 
 
-
-
-
-
 /* solve a linear system using Cholesky, LU, and QR, with various orderings
  *
  * QR way too slow... QR   amd(A'*A)  time:     0.36 resid: 1.53e-16
+ *
+ * LU  case  0: amd(A+A')  time:     0.03 resid: 1.63e-17  <--- BEST ORDERING FOR LU
+ * LU  case  1: amd(S'*S)  time:     0.20 resid: 1.04e-16
+ * LU  case  2: amd(A'*A)  time:     0.25 resid: 1.04e-16
  * */
-void solve_with_cs_chol (problem *Prob) //, std::string solver_type)
+void solve_with_cs_chol (problem *Prob, double *x_result) //, std::string solver_type)
 {
     cs *A, *C ;
     double *b, *x, *r,  t, tol ;
@@ -222,44 +222,17 @@ void solve_with_cs_chol (problem *Prob) //, std::string solver_type)
     printf ("blocks: %d singletons: %d structural rank: %d\n", nb, ns, sprank) ;
     cs_dfree (D) ;
 
-
-//    for (order = -1 ; order <= 2 ; order += 3)	/* natural and amd(A'*A) */
-//    {
-//        if (order == -1 && m > 1000) continue ;
-//        printf ("QR   ") ;
-//        print_order (order) ;
-//        rhs (x, b, m) ;				/* compute right-hand-side */
-//        t = tic () ;
-//        ok = cs_qrsol (C, x, order) ;		/* min norm(Ax-b) with QR */
-//        printf ("time: %8.2f ", toc (t)) ;
-//
-//        resid (ok, C, x, b, r) ;		/* print residual */
-//    }
-
-
     if (m != n || sprank < n) return ;	/* return if rect. or singular*/
-    for (order = -1 ; order <= 2 ; order++)	/* try all orderings */
+    for (order = 0 ; order <= 0 ; order++)	/* try all orderings */
     {
         if (order == -1 && m > 1000) continue ;
         printf ("LU   ") ;
         print_order (order) ;
-
         rhs (x, b, m) ;				/* compute right-hand-side */
-
-
-        for(size_t idx=0; idx < 4; idx++){
-            printf("b=%f\n", b[idx]);
-        }
-
         t = tic () ;
         ok = cs_lusol (C, x, order, tol) ;	/* solve Ax=b with LU */
-
-        printf("x\n");
-        for(size_t idx=0; idx < 4; idx++){
-            printf("x=%f\n", x[idx]);
-        }
-
         printf ("time: %8.2f ", toc (t)) ;
+
         resid (ok, C, x, b, r) ;		/* print residual */
     }
     if (!Prob->sym) return ;
@@ -271,23 +244,20 @@ void solve_with_cs_chol (problem *Prob) //, std::string solver_type)
         rhs (x, b, m) ;				/* compute right-hand-side */
         t = tic () ;
         ok = cs_cholsol (C, x, order) ;		/* solve Ax=b with Cholesky */
-
-        printf("x\n");
-        for(size_t idx=0; idx < m; idx++){
-            printf("%f\n", x[idx]);
-        }
-
         printf ("time: %8.2f ", toc (t)) ;
+        for (size_t i = 0 ; i < m ; i++) x_result[i] = x[i] ;
+
         resid (ok, C, x, b, r) ;		/* print residual */
     }
     // CONVERT X BACK TO EIGEN NOW
+
 }
 
 
-void solve_c(double *A, double*b, double*x,  size_t num_rows, size_t num_cols)
+void solve_c(double *A, double*b, double *x_result,  size_t num_rows, size_t num_cols)
 {
     problem *Prob = load_csparse_format (A, b, num_rows, num_cols) ;
-    solve_with_cs_chol (Prob) ;
+    solve_with_cs_chol (Prob, x_result) ;
     free_problem (Prob) ;
 }
 

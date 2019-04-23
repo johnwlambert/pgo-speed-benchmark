@@ -6,7 +6,7 @@
 #include <cmath>
 #include "pose_graph.h"
 #include "gauss_newton.h"
-
+#include "GTSAMSolver.h"
 
 /*
  * DLR is Deutsches Zentrum für Luft- und Raumfahrt (German Aerospace Center)
@@ -23,8 +23,10 @@ int main() {
 
     PoseGraph2D pg = PoseGraph2D(dataset_name);
 
-    GaussNewtonOptimizer gno(pg, dataset_name);
+    SparseGaussNewtonOptimizer gno(pg, dataset_name);
     gno.optimize();
+
+    GTSAMSolver();
     return 0;
 }
 

@@ -16,10 +16,10 @@
 
 
 
-class GaussNewtonOptimizer
+class SparseGaussNewtonOptimizer
 {
 public:
-    GaussNewtonOptimizer(PoseGraph2D & g, std::string dataset_name);
+    SparseGaussNewtonOptimizer(PoseGraph2D & g, std::string dataset_name);
     void optimize();
 
     private:

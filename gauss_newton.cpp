@@ -9,7 +9,7 @@
  * Constructor -- initialize the graph object.
  * Allocate enough space for dense H and b.
  */
-GaussNewtonOptimizer::GaussNewtonOptimizer(PoseGraph2D & g, std::string dataset_name):
+SparseGaussNewtonOptimizer::SparseGaussNewtonOptimizer(PoseGraph2D & g, std::string dataset_name):
                             g_(g), dataset_name_(dataset_name)
 {
     // could allocate the sparse H and the vector b here
@@ -36,7 +36,7 @@ GaussNewtonOptimizer::GaussNewtonOptimizer(PoseGraph2D & g, std::string dataset_
  * Recall that g contains pose variables in a state vector "x" of shape (K,1).
  * We add delta x (aka "dx") to the state vector.
  */
-void GaussNewtonOptimizer::optimize()
+void SparseGaussNewtonOptimizer::optimize()
 {
     bool visualize=false;
     //// plot the initial state of the graph
@@ -78,7 +78,7 @@ void GaussNewtonOptimizer::optimize()
  * Instead of inverting H explicitly, we use a sparse solver.
  * Compute dx_, a matrix of shape (K,1) representing changed pose variables("delta x")
  */
-void GaussNewtonOptimizer::solve_system()
+void SparseGaussNewtonOptimizer::solve_system()
 {
     std::cout << "\tSystem size: " << H_.rows() << " x " << H_.cols() << std::endl;
     std::cout << "\tSolving system (may take some time) ..." << std::endl;
@@ -103,7 +103,7 @@ void GaussNewtonOptimizer::solve_system()
         A Jacobian wrt x1
         B Jacobian wrt x2
  */
-void GaussNewtonOptimizer::linearize()
+void SparseGaussNewtonOptimizer::linearize()
 {
     std::cout << "\tLinearize and build system" << std::endl;
     for (auto & edge : g_.edges_)
@@ -218,7 +218,7 @@ void GaussNewtonOptimizer::linearize()
     -	A: 3x3 Jacobian wrt x1 - d e_k(x) / d(x_i)
     -	B: 3x3 Jacobian wrt x2 -  d e_k(x) / d(x_j)
  */
-void GaussNewtonOptimizer::linearize_pose_pose_constraint(Vec3 v_i, Vec3 v_j, Vec3 z_ij)
+void SparseGaussNewtonOptimizer::linearize_pose_pose_constraint(Vec3 v_i, Vec3 v_j, Vec3 z_ij)
 {
     e_.resize(3,1);
     A_.resize(3,3);
@@ -271,7 +271,7 @@ void GaussNewtonOptimizer::linearize_pose_pose_constraint(Vec3 v_i, Vec3 v_j, Ve
  *  -	A: 2x3 Jacobian wrt x
  *  -	B: 2x2 Jacobian wrt l
  */
-void GaussNewtonOptimizer::linearize_pose_landmark_constraint(Vec3 x_i, Vec2 l, Vec2 z)
+void SparseGaussNewtonOptimizer::linearize_pose_landmark_constraint(Vec3 x_i, Vec2 l, Vec2 z)
 {
     e_.resize(2,1);
     A_.resize(2,3);
