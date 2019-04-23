@@ -1,16 +1,23 @@
 //
-// Created by John Lambert-Admin on 4/20/19.
+// Created by John Lambert-Admin on 4/22/19.
 //
 
-#ifndef POSE_SLAM_2D_BENCHMARK_CSPARSE_H
-#define POSE_SLAM_2D_BENCHMARK_CSPARSE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#ifndef _CS_H
+#define _CS_H
 
+#ifdef MATLAB_MEX_FILE
+#include "mex.h"
+#endif
 #define CS_VER 1		    /* CSparse Version 1.2.0 */
 #define CS_SUBVER 2
 #define CS_SUBSUB 0
 #define CS_DATE "Mar 6, 2006"	    /* CSparse release date */
 #define CS_COPYRIGHT "Copyright (c) Timothy A. Davis, 2006"
+
 
 /* --- primary CSparse routines and data structures ------------------------- */
 typedef struct cs_sparse    /* matrix in compressed-column or triplet form */
@@ -133,7 +140,10 @@ csd *cs_ddone (csd *D, cs *C, void *w, int ok) ;
 #define CS_MARKED(Ap,j) (Ap [j] < 0)
 #define CS_MARK(Ap,j) { Ap [j] = CS_FLIP (Ap [j]) ; }
 #define CS_OVERFLOW(n,size) (n > INT_MAX / (int) size)
+#endif
 
 
 
-#endif //POSE_SLAM_2D_BENCHMARK_CSPARSE_H
+#ifdef __cplusplus
+}
+#endif

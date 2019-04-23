@@ -4,6 +4,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 # include <stdlib.h>
 # include <limits.h>
 # include <math.h>
@@ -11,6 +15,7 @@
 # include <time.h>
 
 # include "csparse/csparse.h"
+
 
 
 typedef struct problem_struct
@@ -25,100 +30,68 @@ typedef struct problem_struct
 
 
 
-
-problem *get_problem (FILE *f, double tol) ;
-int chol_ordering_demo (problem *Prob) ;
-problem *free_problem (problem *Prob) ;
+problem *free_problem ( problem *Prob ) ;
 
 
-/* cs_demo2: read a matrix and solve a linear system */
-void convert_eigen_to_csparse (void)
+/* 1 if A is square & upper tri., -1 if square & lower tri., 0 otherwise */
+static int is_sym ( cs *A )
 {
-    problem *Prob = get_problem (stdin, 1e-14) ;
-    chol_ordering_demo (Prob) ;
-    free_problem (Prob) ;
-}
-
-
-/* cs_demo2: read a matrix and solve a linear system */
-void convert_csparse_to_eigen (void)
-{
-//    problem *Prob = get_problem (stdin, 1e-14) ;
-//    demo2 (Prob) ;
-//    free_problem (Prob) ;
-}
-
-
-
-
-
-/* read a problem from a file */
-problem *get_problem (FILE *f, double tol)
-{
-    cs *T, *A, *C ;
-    int sym, m, n, mn, nz1, nz2 ;
-    problem *Prob ;
-    Prob = cs_calloc (1, sizeof (problem)) ;
-    if (!Prob) return (NULL) ;
-    T = cs_load (f) ;			/* load triplet matrix T from a file */
-    Prob->A = A = cs_triplet (T) ;	/* A = compressed-column form of T */
-    cs_spfree (T) ;			/* clear T */
-    if (!cs_dupl (A)) return (free_problem (Prob)) ; /* sum up duplicates */
-    Prob->sym = sym = is_sym (A) ;	/* determine if A is symmetric */
-    m = A->m ; n = A->n ;
-    mn = CS_MAX (m,n) ;
-    nz1 = A->p [n] ;
-    cs_dropzeros (A) ;			/* drop zero entries */
-    nz2 = A->p [n] ;
-    if (tol > 0) cs_droptol (A, tol) ;	/* drop tiny entries (just to test) */
-    Prob->C = C = sym ? make_sym (A) : A ;  /* C = A + triu(A,1)', or C=A */
-    if (!C) return (free_problem (Prob)) ;
-    printf ("\n--- Matrix: %d-by-%d, nnz: %d (sym: %d: nnz %d), norm: %8.2e\n",
-            m, n, A->p [n], sym, sym ? C->p [n] : 0, cs_norm (C)) ;
-    if (nz1 != nz2) printf ("zero entries dropped: %d\n", nz1 - nz2) ;
-    if (nz2 != A->p [n]) printf ("tiny entries dropped: %d\n", nz2 - A->p [n]) ;
-    Prob->b = cs_malloc (mn, sizeof (double)) ;
-    Prob->x = cs_malloc (mn, sizeof (double)) ;
-    Prob->r = cs_malloc (mn, sizeof (double)) ;
-    return ((!Prob->b || !Prob->x || !Prob->r) ? free_problem (Prob) : Prob) ;
-}
-
-
-/* solve a linear system using Cholesky with various orderings */
-int chol_ordering_demo (problem *Prob)
-{
-    cs *A, *C ;
-    double *b, *x, *r,  t, tol ;
-    int k, m, n, ok, order, nb, ns, *R, *S, *rr, sprank ;
-    csd *D ;
-    if (!Prob) return (0) ;
-    A = Prob->A ; C = Prob->C ; b = Prob->b ; x = Prob->x ; r = Prob->r ;
-    m = A->m ; n = A->n ;
-    tol = Prob->sym ? 0.001 : 1 ;		/* partial pivoting tolerance */
-    D = cs_dmperm (C) ;				/* dmperm analysis */
-    if (!D) return (0) ;
-    nb = D->nb ; R = D->R ; S = D->S ; rr = D->rr ;
-    sprank = rr [3] ;
-    for (ns = 0, k = 0 ; k < nb ; k++)
+//    return 1;
+    int is_upper, is_lower, j, p, n = A->n, m = A->m, *Ap = A->p, *Ai = A->i ;
+    if (m != n) return (0) ;
+    is_upper = 1 ;
+    is_lower = 1 ;
+    for (j = 0 ; j < n ; j++)
     {
-        ns += ((R [k+1] == R [k]+1) && (S [k+1] == S [k]+1)) ;
+        for (p = Ap [j] ; p < Ap [j+1] ; p++)
+        {
+            if (Ai [p] > j) is_upper = 0 ;
+            if (Ai [p] < j) is_lower = 0 ;
+        }
     }
-    printf ("blocks: %d singletons: %d structural rank: %d\n", nb, ns, sprank) ;
-    cs_dfree (D) ;
+    return (is_upper ? 1 : (is_lower ? -1 : 0)) ;
+}
 
-    if (!Prob->sym) return (1) ;
-    for (order = -1 ; order <= 0 ; order++)	/* natural and amd(A+A') */
-    {
-        if (order == -1 && m > 1000) continue ;
-        printf ("Chol ") ;
-        print_order (order) ;
-        rhs (x, b, m) ;				/* compute right-hand-side */
-        t = tic () ;
-        ok = cs_cholsol (C, x, order) ;		/* solve Ax=b with Cholesky */
-        printf ("time: %8.2f ", toc (t)) ;
-        resid (ok, C, x, b, r) ;		/* print residual */
-    }
-    return (1) ;
+/* true for off-diagonal entries */
+static int dropdiag ( int i, int j, double aij, void *other )
+{
+    return (i != j);
+}
+
+/* C = A + triu(A,1)' */
+static cs *make_sym ( cs *A )
+{
+    cs *AT, *C ;
+    AT = cs_transpose (A, 1) ;		/* AT = A' */
+    cs_fkeep (AT, &dropdiag, NULL) ;	/* drop diagonal entries from AT */
+    C = cs_add (A, AT, 1, 1) ;		/* C = A+AT */
+    cs_spfree (AT) ;
+    return (C) ;
+}
+
+/* create a right-hand-side */
+static void rhs (double *x, double *b, int m)
+{
+    int i ;
+//    for (i = 0 ; i < m ; i++) b [i] = 1 + ((double) i) / m ;
+
+    b[0] = -0.12887603;
+    b[1] = 4.9677217;
+    b[2] = -3.16320475;
+    b[3] = 0.3012804;
+
+    for (i = 0 ; i < m ; i++) x [i] = b [i] ;
+
+
+}
+
+/* infinity-norm of x */
+static double norm (double *x, int n)
+{
+    int i ;
+    double normx = 0 ;
+    for (i = 0 ; i < n ; i++) normx = CS_MAX (normx, fabs (x [i])) ;
+    return (normx) ;
 }
 
 /* compute residual, norm(A*x-b,inf) / (norm(A,1)*norm(x,inf) + norm(b,inf)) */
@@ -144,13 +117,15 @@ static double toc (double t)
     return (CS_MAX (0, s-t));
 }
 
-/* infinity-norm of x */
-static double norm (double *x, int n)
+static void print_order (int order)
 {
-    int i ;
-    double normx = 0 ;
-    for (i = 0 ; i < n ; i++) normx = CS_MAX (normx, fabs (x [i])) ;
-    return (normx) ;
+    switch (order)
+    {
+        case -1: printf ("natural    ") ; break ;
+        case  0: printf ("amd(A+A')  ") ; break ;
+        case  1: printf ("amd(S'*S)  ") ; break ;
+        case  2: printf ("amd(A'*A)  ") ; break ;
+    }
 }
 
 
@@ -163,5 +138,10 @@ problem *free_problem (problem *Prob)
     cs_free (Prob->b) ;
     cs_free (Prob->x) ;
     cs_free (Prob->r) ;
-    return (cs_free (Prob)) ;
+    return (problem *) (cs_free (Prob)) ;
 }
+
+
+#ifdef __cplusplus
+}
+#endif

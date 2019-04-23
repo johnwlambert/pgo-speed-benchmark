@@ -1,6 +1,10 @@
 //
-// Created by John Lambert-Admin on 4/20/19.
+// Created by John Lambert-Admin on 4/22/19.
 //
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 # include <stdlib.h>
 # include <limits.h>
@@ -2120,3 +2124,7 @@ int cs_utsolve (const cs *U, double *x)
     }
     return (1) ;
 }
+
+#ifdef __cplusplus
+}
+#endif

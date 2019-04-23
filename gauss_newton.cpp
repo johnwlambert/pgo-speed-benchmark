@@ -84,13 +84,14 @@ void GaussNewtonOptimizer::solve_system()
     std::cout << "\tSolving system (may take some time) ..." << std::endl;
     std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 
-    // SH=sparse(H)
-    //dx=SH\b
-    //dx_ = linearize_and_solve(g, iter, dataset_name);
+
+    SparseLinSolver sls(A_,b_,dx_);
+    std::string solver_type = "cholesky";
+    // solve for dx_ with sparse matrices
+    sls.solve_eigen_w_csparse(solver_type);
 
     double duration = compute_elapsed_wall_clock_time(start_time, std::chrono::steady_clock::now() );
     std::cout << "Linear system solve complete -- took " << duration << " sec.";
-
 }
 
 
