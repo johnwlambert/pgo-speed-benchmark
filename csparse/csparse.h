@@ -2,6 +2,8 @@
 // Created by John Lambert-Admin on 4/22/19.
 //
 
+#pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif

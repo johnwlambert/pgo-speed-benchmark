@@ -3,7 +3,7 @@
 //
 
 #include "gauss_newton.h"
-
+#include "sparse_lin_solver.h"
 
 /*
  * Constructor -- initialize the graph object.
@@ -85,10 +85,10 @@ void GaussNewtonOptimizer::solve_system()
     std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 
 
-    SparseLinSolver sls(A_,b_,dx_);
+    SparseLinSolver sls(H_,b_,dx_);
     std::string solver_type = "cholesky";
     // solve for dx_ with sparse matrices
-    sls.solve_eigen_w_csparse(solver_type);
+    sls.solve_cplusplus (solver_type);
 
     double duration = compute_elapsed_wall_clock_time(start_time, std::chrono::steady_clock::now() );
     std::cout << "Linear system solve complete -- took " << duration << " sec.";

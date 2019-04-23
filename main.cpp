@@ -4,9 +4,6 @@
 
 #include <iostream>
 #include <cmath>
-#include <Eigen/Core>
-
-#include "se2.h"
 #include "pose_graph.h"
 #include "gauss_newton.h"
 

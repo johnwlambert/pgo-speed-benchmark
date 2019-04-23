@@ -13,7 +13,7 @@
 #include "manifold_constraints.h"
 #include "timing_utils.h"
 
-#include "sparse_lin_solver.h"
+
 
 
 class GaussNewtonOptimizer
